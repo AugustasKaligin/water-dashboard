@@ -31,7 +31,7 @@ async function loadHistory() {
     const res = await fetch(`${API}history/ESP32_B`);
     const data = await res.json();
 
-    const labels = data.map(x => new Date(x.ts));
+    const labels = data.map(x => new Date(x.timestamp));
     const water  = data.map(x => x.water);
     const target = data.map(x => x.target);
 
@@ -53,10 +53,13 @@ async function loadHistory() {
     });
 }
 
+}
+
 loadHistory();
 </script>
 
 </body>
 </html>
+
 
 

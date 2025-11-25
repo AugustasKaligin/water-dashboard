@@ -28,7 +28,7 @@
 const API = "https://nw9ebhwhaj.execute-api.eu-north-1.amazonaws.com/";
 
 async function loadHistory() {
-    const res = await fetch(`${API}/ESP32_B`);
+    const res = await fetch(`${API}history/ESP32_B`);
     const data = await res.json();
 
     const labels = data.map(x => new Date(x.ts));
@@ -58,4 +58,5 @@ loadHistory();
 
 </body>
 </html>
+
 

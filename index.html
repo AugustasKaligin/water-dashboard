@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Water System Telemetry Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+<style>
+ body { font-family: Arial; padding: 20px; background: #e9eef3; }
+ h2 { margin-top: 0; }
+ .card {
+   background: white;
+   padding: 20px;
+   border-radius: 8px;
+   box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+ }
+</style>
+</head>
+
+<body>
+<h2>Water Level & Target History</h2>
+<div class="card">
+    <canvas id="chart"></canvas>
+</div>
+
+<script>
+const API = "https://YOUR_API_URL/telemetry/history";
+
+async function loadHistory() {
+    const res = await fetch(`${API}/ESP32_B`);
+    const data = await res.json();
+
+    const labels = data.map(x => new Date(x.ts));
+    const water  = data.map(x => x.water);
+    const target = data.map(x => x.target);
+
+    new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: "Water Level", data: water, borderWidth: 2 },
+                { label: "Target", data: target, borderWidth: 2 }
+            ]
+        },
+        options: {
+            scales: {
+                x: { type: "time", time: { unit: "minute" } },
+                y: { min: 0, max: 100 }
+            }
+        }
+    });
+}
+
+loadHistory();
+</script>
+
+</body>
+</html>

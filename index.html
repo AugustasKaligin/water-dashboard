@@ -1,81 +1,68 @@
 <script>
 const API = "https://nw9ebhwhaj.execute-api.eu-north-1.amazonaws.com/";
 
-// Fetch all telemetry (but ignore PID)
+// Fetch telemetry from Lambda
 async function fetchDevice(deviceId) {
-const res = await fetch(`${API}history/${deviceId}`);
-return await res.json();
+    const res = await fetch(`${API}history/${deviceId}`);
+    return await res.json();
 }
 
 async function loadHistory() {
-    const dataA = await fetchDevice("ESP32_A");
-    const dataB = await fetchDevice("ESP32_B");
     const A = await fetchDevice("ESP32_A");
     const B = await fetchDevice("ESP32_B");
 
-    // Convert timestamps
-    const labelsA = dataA.map(x => new Date(x.timestamp));
-    const labelsB = dataB.map(x => new Date(x.timestamp));
-    // Extract timestamps
+    // Timestamps
     const labelsA = A.map(x => new Date(x.timestamp));
     const labelsB = B.map(x => new Date(x.timestamp));
 
-    // Combine & sort timestamps for the x-axis
-    // Merge timestamps for clean x-axis
-const allLabels = [...labelsA, ...labelsB].sort((a, b) => a - b);
+    // Unified sorted axis
+    const allLabels = [...labelsA, ...labelsB].sort((a, b) => a - b);
 
-    const waterA  = dataA.map(x => x.water);
-    const targetA = dataA.map(x => x.target);
-    // Extract water + target only
+    // Extract water + target only (ignore PID fields)
     const waterA  = A.map(x => x.water ?? null);
     const targetA = A.map(x => x.target ?? null);
 
-    const waterB  = dataB.map(x => x.water);
-    const targetB = dataB.map(x => x.target);
     const waterB  = B.map(x => x.water ?? null);
     const targetB = B.map(x => x.target ?? null);
 
-new Chart(document.getElementById("chart"), {
-type: "line",
-@@ -58,33 +60,43 @@ <h2>Water Level & Target History</h2>
-label: "ESP32_A Water",
-data: waterA,
-borderWidth: 2,
-                    borderColor: "blue"
+    new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: {
+            labels: allLabels,
+            datasets: [
+                {
+                    label: "ESP32_A Water",
+                    data: waterA,
+                    borderWidth: 2,
                     borderColor: "blue",
                     spanGaps: true
-},
-{
-label: "ESP32_A Target",
-data: targetA,
-borderWidth: 2,
-                    borderColor: "lightblue"
+                },
+                {
+                    label: "ESP32_A Target",
+                    data: targetA,
+                    borderWidth: 2,
                     borderColor: "lightblue",
                     spanGaps: true
-},
-{
-label: "ESP32_B Water",
-data: waterB,
-borderWidth: 2,
-                    borderColor: "red"
+                },
+                {
+                    label: "ESP32_B Water",
+                    data: waterB,
+                    borderWidth: 2,
                     borderColor: "red",
                     spanGaps: true
-},
-{
-label: "ESP32_B Target",
-data: targetB,
-borderWidth: 2,
-                    borderColor: "pink"
+                },
+                {
+                    label: "ESP32_B Target",
+                    data: targetB,
+                    borderWidth: 2,
                     borderColor: "pink",
                     spanGaps: true
-}
-]
-},
-options: {
-responsive: true,
-scales: {
-                x: { type: "time", time: { unit: "minute" } },
-                y: { min: 0, max: 100 }
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
                 x: {
                     type: "time",
                     time: { unit: "minute" }
@@ -84,6 +71,10 @@ scales: {
                     min: 0,
                     max: 100
                 }
+            }
+        }
+    });
 }
-}
-});
+
+loadHistory();
+</script>

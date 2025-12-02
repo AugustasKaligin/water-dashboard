@@ -27,27 +27,29 @@
 <script>
 const API = "https://nw9ebhwhaj.execute-api.eu-north-1.amazonaws.com/";
 
+// Fetch all telemetry (but ignore PID)
 async function fetchDevice(deviceId) {
     const res = await fetch(`${API}history/${deviceId}`);
     return await res.json();
 }
 
 async function loadHistory() {
-    const dataA = await fetchDevice("ESP32_A");
-    const dataB = await fetchDevice("ESP32_B");
+    const A = await fetchDevice("ESP32_A");
+    const B = await fetchDevice("ESP32_B");
 
-    // Convert timestamps
-    const labelsA = dataA.map(x => new Date(x.timestamp));
-    const labelsB = dataB.map(x => new Date(x.timestamp));
+    // Extract timestamps
+    const labelsA = A.map(x => new Date(x.timestamp));
+    const labelsB = B.map(x => new Date(x.timestamp));
 
-    // Combine & sort timestamps for the x-axis
+    // Merge timestamps for clean x-axis
     const allLabels = [...labelsA, ...labelsB].sort((a, b) => a - b);
 
-    const waterA  = dataA.map(x => x.water);
-    const targetA = dataA.map(x => x.target);
+    // Extract water + target only
+    const waterA  = A.map(x => x.water ?? null);
+    const targetA = A.map(x => x.target ?? null);
 
-    const waterB  = dataB.map(x => x.water);
-    const targetB = dataB.map(x => x.target);
+    const waterB  = B.map(x => x.water ?? null);
+    const targetB = B.map(x => x.target ?? null);
 
     new Chart(document.getElementById("chart"), {
         type: "line",
@@ -58,33 +60,43 @@ async function loadHistory() {
                     label: "ESP32_A Water",
                     data: waterA,
                     borderWidth: 2,
-                    borderColor: "blue"
+                    borderColor: "blue",
+                    spanGaps: true
                 },
                 {
                     label: "ESP32_A Target",
                     data: targetA,
                     borderWidth: 2,
-                    borderColor: "lightblue"
+                    borderColor: "lightblue",
+                    spanGaps: true
                 },
                 {
                     label: "ESP32_B Water",
                     data: waterB,
                     borderWidth: 2,
-                    borderColor: "red"
+                    borderColor: "red",
+                    spanGaps: true
                 },
                 {
                     label: "ESP32_B Target",
                     data: targetB,
                     borderWidth: 2,
-                    borderColor: "pink"
+                    borderColor: "pink",
+                    spanGaps: true
                 }
             ]
         },
         options: {
             responsive: true,
             scales: {
-                x: { type: "time", time: { unit: "minute" } },
-                y: { min: 0, max: 100 }
+                x: {
+                    type: "time",
+                    time: { unit: "minute" }
+                },
+                y: {
+                    min: 0,
+                    max: 100
+                }
             }
         }
     });

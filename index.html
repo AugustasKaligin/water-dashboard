@@ -27,24 +27,61 @@
 <script>
 const API = "https://nw9ebhwhaj.execute-api.eu-north-1.amazonaws.com/";
 
-async function loadHistory() {
-    const res = await fetch(`${API}history/ESP32_B`);
-    const data = await res.json();
+async function fetchDevice(deviceId) {
+    const res = await fetch(`${API}history/${deviceId}`);
+    return await res.json();
+}
 
-    const labels = data.map(x => new Date(x.timestamp));
-    const water  = data.map(x => x.water);
-    const target = data.map(x => x.target);
+async function loadHistory() {
+    const dataA = await fetchDevice("ESP32_A");
+    const dataB = await fetchDevice("ESP32_B");
+
+    // Convert timestamps
+    const labelsA = dataA.map(x => new Date(x.timestamp));
+    const labelsB = dataB.map(x => new Date(x.timestamp));
+
+    // Combine & sort timestamps for the x-axis
+    const allLabels = [...labelsA, ...labelsB].sort((a, b) => a - b);
+
+    const waterA  = dataA.map(x => x.water);
+    const targetA = dataA.map(x => x.target);
+
+    const waterB  = dataB.map(x => x.water);
+    const targetB = dataB.map(x => x.target);
 
     new Chart(document.getElementById("chart"), {
         type: "line",
         data: {
-            labels,
+            labels: allLabels,
             datasets: [
-                { label: "Water Level", data: water, borderWidth: 2 },
-                { label: "Target", data: target, borderWidth: 2 }
+                {
+                    label: "ESP32_A Water",
+                    data: waterA,
+                    borderWidth: 2,
+                    borderColor: "blue"
+                },
+                {
+                    label: "ESP32_A Target",
+                    data: targetA,
+                    borderWidth: 2,
+                    borderColor: "lightblue"
+                },
+                {
+                    label: "ESP32_B Water",
+                    data: waterB,
+                    borderWidth: 2,
+                    borderColor: "red"
+                },
+                {
+                    label: "ESP32_B Target",
+                    data: targetB,
+                    borderWidth: 2,
+                    borderColor: "pink"
+                }
             ]
         },
         options: {
+            responsive: true,
             scales: {
                 x: { type: "time", time: { unit: "minute" } },
                 y: { min: 0, max: 100 }
@@ -55,12 +92,5 @@ async function loadHistory() {
 
 loadHistory();
 </script>
-
-
-
 </body>
 </html>
-
-
-
-

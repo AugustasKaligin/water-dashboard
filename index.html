@@ -1,55 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Water System Telemetry Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-
-<style>
- body { font-family: Arial; padding: 20px; background: #e9eef3; }
- h2 { margin-top: 0; }
- .card {
-   background: white;
-   padding: 20px;
-   border-radius: 8px;
-   box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
- }
-</style>
-</head>
-
-<body>
-<h2>Water Level & Target History</h2>
-<div class="card">
-    <canvas id="chart"></canvas>
-</div>
-
 <script>
 const API = "https://nw9ebhwhaj.execute-api.eu-north-1.amazonaws.com/";
 
-// Fetch all telemetry (but ignore PID)
 async function fetchDevice(deviceId) {
     const res = await fetch(`${API}history/${deviceId}`);
-    return await res.json();
+    const raw = await res.json();
+
+    // Normalize fields → ignore extra backend values
+    return raw.map(entry => ({
+        timestamp: new Date(entry.timestamp),
+        water: entry.water ?? 0,
+        target: entry.target ?? 0
+    }));
 }
 
 async function loadHistory() {
-    const A = await fetchDevice("ESP32_A");
-    const B = await fetchDevice("ESP32_B");
+    const dataA = await fetchDevice("ESP32_A");
+    const dataB = await fetchDevice("ESP32_B");
 
-    // Extract timestamps
-    const labelsA = A.map(x => new Date(x.timestamp));
-    const labelsB = B.map(x => new Date(x.timestamp));
+    const labelsA = dataA.map(x => x.timestamp);
+    const labelsB = dataB.map(x => x.timestamp);
 
-    // Merge timestamps for clean x-axis
     const allLabels = [...labelsA, ...labelsB].sort((a, b) => a - b);
 
-    // Extract water + target only
-    const waterA  = A.map(x => x.water ?? null);
-    const targetA = A.map(x => x.target ?? null);
+    const waterA  = dataA.map(x => x.water);
+    const targetA = dataA.map(x => x.target);
 
-    const waterB  = B.map(x => x.water ?? null);
-    const targetB = B.map(x => x.target ?? null);
+    const waterB  = dataB.map(x => x.water);
+    const targetB = dataB.map(x => x.target);
 
     new Chart(document.getElementById("chart"), {
         type: "line",
@@ -60,43 +37,33 @@ async function loadHistory() {
                     label: "ESP32_A Water",
                     data: waterA,
                     borderWidth: 2,
-                    borderColor: "blue",
-                    spanGaps: true
+                    borderColor: "blue"
                 },
                 {
                     label: "ESP32_A Target",
                     data: targetA,
                     borderWidth: 2,
-                    borderColor: "lightblue",
-                    spanGaps: true
+                    borderColor: "lightblue"
                 },
                 {
                     label: "ESP32_B Water",
                     data: waterB,
                     borderWidth: 2,
-                    borderColor: "red",
-                    spanGaps: true
+                    borderColor: "red"
                 },
                 {
                     label: "ESP32_B Target",
                     data: targetB,
                     borderWidth: 2,
-                    borderColor: "pink",
-                    spanGaps: true
+                    borderColor: "pink"
                 }
             ]
         },
         options: {
             responsive: true,
             scales: {
-                x: {
-                    type: "time",
-                    time: { unit: "minute" }
-                },
-                y: {
-                    min: 0,
-                    max: 100
-                }
+                x: { type: "time", time: { unit: "minute" } },
+                y: { min: 0, max: 100 }
             }
         }
     });
@@ -104,5 +71,3 @@ async function loadHistory() {
 
 loadHistory();
 </script>
-</body>
-</html>
